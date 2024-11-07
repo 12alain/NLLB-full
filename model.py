@@ -11,12 +11,9 @@ from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForS
 from datasets import load_dataset
 import torch
 
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-    print("GPU disponible et utilisé.")
-else:
-    device = torch.device("cpu")
-    print("Aucun GPU disponible, utilisation du CPU.")
+# Détection du GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Périphérique utilisé :", device)
 
 
 # Configurer les variables d'environnement pour Weights and Biases
@@ -26,7 +23,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Charger le modèle et le tokenizer
 model_checkpoint = '/home/mdrame/alain/nllb-200-distilled-600M'
-model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint, device_map="auto")
+model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint).to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
 
 transformers.set_seed(7)
