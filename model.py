@@ -4,7 +4,7 @@
 import os
 import transformers
 import torch
-import evaluate
+import sacrebleu 
 import numpy as np
 from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForSeq2Seq,
                           Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback)
@@ -29,7 +29,7 @@ path_data_dir = "/home/mdrame/alain/data/unidirection/fr_wo"
 data = load_dataset(path_data_dir)
 
 # Initialiser la métrique
-metric = evaluate.load("sacrebleu")
+#metric = evaluate.load("sacrebleu")
 
 # Préparer les données
 max_input_length = 128
@@ -89,7 +89,10 @@ def compute_metrics(eval_preds):
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
     decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
-    result = metric.compute(predictions=decoded_preds, references=decoded_labels)
+    #result = metric.compute(predictions=decoded_preds, references=decoded_labels)
+    # Calculer le score BLEU avec sacrebleu
+    bleu = sacrebleu.corpus_bleu(decoded_preds, [decoded_labels])
+    result = {"bleu": bleu.score}
     result = {"bleu": result["score"]}
     prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds]
     result["gen_len"] = np.mean(prediction_lens)
