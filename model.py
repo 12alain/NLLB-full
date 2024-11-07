@@ -11,6 +11,14 @@ from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForS
 from datasets import load_dataset
 
 
+# Vérifier si un GPU est disponible
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print(f"Le script utilise le GPU : {torch.cuda.get_device_name(0)}")
+else:
+    device = torch.device("cpu")
+    print("Aucun GPU détecté, le script utilise le CPU.")
+    
 # Configurer les variables d'environnement pour Weights and Biases
 os.environ["WANDB_PROJECT"] = "NLLB-200-distille-Experiments"
 os.environ["WANDB_LOG_MODEL"] = "end"
