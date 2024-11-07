@@ -4,21 +4,13 @@
 import os
 import transformers
 import torch
-import sacrebleu 
+import evaluate
 import numpy as np
 from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForSeq2Seq,
                           Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback)
 from datasets import load_dataset
 
 
-# Vérifier si un GPU est disponible
-if torch.cuda.is_available():
-    device = torch.device("cuda")
-    print(f"Le script utilise le GPU : {torch.cuda.get_device_name(0)}")
-else:
-    device = torch.device("cpu")
-    print("Aucun GPU détecté, le script utilise le CPU.")
-    
 # Configurer les variables d'environnement pour Weights and Biases
 os.environ["WANDB_PROJECT"] = "NLLB-200-distille-Experiments"
 os.environ["WANDB_LOG_MODEL"] = "end"
@@ -37,7 +29,7 @@ path_data_dir = "/home/mdrame/alain/data/unidirection/fr_wo"
 data = load_dataset(path_data_dir)
 
 # Initialiser la métrique
-#metric = evaluate.load("sacrebleu")
+metric = evaluate.load("sacrebleu")
 
 # Préparer les données
 max_input_length = 128
@@ -74,7 +66,7 @@ args = Seq2SeqTrainingArguments(
     save_total_limit=1,
     num_train_epochs=120,
     predict_with_generate=True,
-    report_to='none',
+    report_to='all',
     remove_unused_columns=False,
     dataloader_num_workers=24,
     load_best_model_at_end=True
@@ -97,10 +89,7 @@ def compute_metrics(eval_preds):
     labels = np.where(labels != -100, labels, tokenizer.pad_token_id)
     decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
     decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
-    #result = metric.compute(predictions=decoded_preds, references=decoded_labels)
-    # Calculer le score BLEU avec sacrebleu
-    bleu = sacrebleu.corpus_bleu(decoded_preds, [decoded_labels])
-    result = {"bleu": bleu.score}
+    result = metric.compute(predictions=decoded_preds, references=decoded_labels)
     result = {"bleu": result["score"]}
     prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds]
     result["gen_len"] = np.mean(prediction_lens)
