@@ -9,6 +9,20 @@ import numpy as np
 from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForSeq2Seq,
                           Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback)
 from datasets import load_dataset
+import torch
+
+# Vérifier le nombre de GPU disponibles
+num_gpus = torch.cuda.device_count()
+print(f"Nombre de GPU disponibles : {num_gpus}")
+
+# Vérifier si un GPU est utilisé
+if torch.cuda.is_available():
+    print("Un GPU est disponible.")
+    for i in range(num_gpus):
+        print(f"Nom du GPU {i}: {torch.cuda.get_device_name(i)}")
+        print(f"Le script utilise le GPU {i}.")
+else:
+    print("Aucun GPU n'est disponible. Le script s'exécute sur le CPU.")
 
 
 # Configurer les variables d'environnement pour Weights and Biases
