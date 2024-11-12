@@ -9,12 +9,6 @@ import numpy as np
 from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer, DataCollatorForSeq2Seq,
                           Seq2SeqTrainingArguments, Seq2SeqTrainer, EarlyStoppingCallback)
 from datasets import load_dataset
-import torch
-
-# Détection du GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Périphérique utilisé :", device)
-
 
 # Configurer les variables d'environnement pour Weights and Biases
 os.environ["WANDB_PROJECT"] = "NLLB-200-distille-Experiments"
@@ -23,9 +17,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Charger le modèle et le tokenizer
 model_checkpoint = '/home/mdrame/alain/nllb-200-distilled-600M'
-model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint).to(device)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_checkpoint, device_map="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
 
+# Fixer une graine aléatoire pour la reproductibilité
 transformers.set_seed(7)
 print(f"Version de transformers : {transformers.__version__}")
 
@@ -60,7 +55,7 @@ target_lang = 'wo'
 model_checkpoint = "model_best/{}-finetuned-{}-to-{}".format(model_checkpoint.split("/")[-1], source_lang, target_lang)
 
 args = Seq2SeqTrainingArguments(
-    model_checkpoint,
+    output_dir=model_checkpoint,
     eval_strategy="steps",
     eval_steps=1000,
     save_steps=1000,
@@ -73,7 +68,7 @@ args = Seq2SeqTrainingArguments(
     predict_with_generate=True,
     report_to='all',
     remove_unused_columns=False,
-    dataloader_num_workers=24,
+    dataloader_num_workers=4,  # Ajustement des workers pour éviter les problèmes de mémoire
     load_best_model_at_end=True
 )
 
@@ -116,4 +111,3 @@ trainer = Seq2SeqTrainer(
 trainer.train()
 
 print("Entraînement terminé.")
-
